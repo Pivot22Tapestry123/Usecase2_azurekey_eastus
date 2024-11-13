@@ -5,10 +5,10 @@ import os
 import json
 import warnings
 from crewai import Agent, Task, Crew, Process
- 
+
 # Suppress warnings
 warnings.filterwarnings('ignore')
- 
+
 # Helper function to load and save configurations
 def load_config():
     try:
@@ -16,30 +16,30 @@ def load_config():
             return json.load(f)
     except FileNotFoundError:
         return {}
- 
+
 def save_config(config):
     with open("agent_task_config.json", "w") as f:
         json.dump(config, f)
- 
+
 # Load persisted configurations at startup
 config = load_config()
- 
+
 # Streamlit UI
 st.title("Research Article Generator")
- 
+
 # File uploader
 uploaded_file = st.file_uploader("Upload your transcript file", type="txt")
 st.write(uploaded_file)
- 
+
 # API Key and endpoint inputs for Azure OpenAI
 azure_api_key = st.text_input("Enter your Azure OpenAI API Key", type="password")
 azure_endpoint = "https://rstapestryopenai2.openai.azure.com/"
 azure_deployment = "gpt-4"  # Deployment name as per your Azure configuration
 azure_api_version = "2024-10-01-preview"
- 
+
 # Temperature slider
 temperature = st.slider("Set the temperature for the output (0 = deterministic, 1 = creative)", min_value=0.0, max_value=1.0, value=0.7)
- 
+
 # Define prompts for agents and tasks
 if 'prompts' not in st.session_state:
     st.session_state['prompts'] = config or {
@@ -52,45 +52,49 @@ if 'prompts' not in st.session_state:
         "tasks": {"plan": "Plan content for the topic", "write": "Write a research article based on the content plan",
                   "edit": "Edit and finalize the research article"}
     }
- 
+
 # User inputs for each prompt
 st.header("Agent Prompts")
- 
+
 for agent, prompts in st.session_state['prompts'].items():
     if agent != "tasks":
         st.subheader(f"{agent.capitalize()} Agent")
         prompts["role"] = st.text_input(f"{agent.capitalize()} Role", value=prompts["role"], key=f"{agent}_role")
         prompts["goal"] = st.text_area(f"{agent.capitalize()} Goal", value=prompts["goal"], key=f"{agent}_goal")
         prompts["backstory"] = st.text_area(f"{agent.capitalize()} Backstory", value=prompts["backstory"], key=f"{agent}_backstory")
- 
+
 st.header("Task Descriptions")
 for task, description in st.session_state['prompts']["tasks"].items():
     st.session_state['prompts']["tasks"][task] = st.text_area(f"{task.capitalize()} Task Description", value=description, key=f"{task}_description")
- 
+
 # Button to save user modifications
 if st.button("Save Configuration"):
     save_config(st.session_state['prompts'])
     st.success("Configuration saved successfully!")
- 
+
 # Button to start processing
 if st.button("Generate Research Article"):
     if not uploaded_file:
         st.error("Please upload a transcript file.")
     else:
         transcripts = uploaded_file.read().decode("utf-8")
- 
+
         try:
-            # Test Azure OpenAI API connection
-            response = requests.get(
-                f"{azure_endpoint}openai/deployments/{azure_deployment}/models?api-version={azure_api_version}",
+            # Test Azure OpenAI API connection with a small completion request
+            response = requests.post(
+                f"{azure_endpoint}openai/deployments/{azure_deployment}/chat/completions?api-version={azure_api_version}",
                 headers={
                     "api-key": azure_api_key,
                     "Content-Type": "application/json"
+                },
+                json={
+                    "messages": [{"role": "system", "content": "Test connection."}],
+                    "max_tokens": 5
                 }
             )
             response.raise_for_status()
             st.success("API connection successful!")
- 
+
             # Define agents and tasks with user-defined prompts
             planner = Agent(
                 role=st.session_state['prompts']['planner']['role'],
@@ -100,7 +104,7 @@ if st.button("Generate Research Article"):
                 verbose=True,
                 temperature=temperature
             )
- 
+
             writer = Agent(
                 role=st.session_state['prompts']['writer']['role'],
                 goal=st.session_state['prompts']['writer']['goal'],
@@ -109,7 +113,7 @@ if st.button("Generate Research Article"):
                 verbose=True,
                 temperature=temperature
             )
- 
+
             editor = Agent(
                 role=st.session_state['prompts']['editor']['role'],
                 goal=st.session_state['prompts']['editor']['goal'],
@@ -118,38 +122,38 @@ if st.button("Generate Research Article"):
                 verbose=True,
                 temperature=temperature
             )
- 
+
             # Define tasks
             plan = Task(
                 description=f"{st.session_state['prompts']['tasks']['plan']}: {transcripts}",
                 agent=planner,
             )
- 
+
             write = Task(
                 description=st.session_state['prompts']['tasks']['write'],
                 agent=writer,
             )
- 
+
             edit = Task(
                 description=st.session_state['prompts']['tasks']['edit'],
                 agent=editor
             )
- 
+
             # Create crew
             crew = Crew(
                 agents=[planner, writer, editor],
                 tasks=[plan, write, edit],
                 verbose=True
             )
- 
+
             # Process the transcript
             with st.spinner("Generating research article... This may take a few minutes."):
                 result = crew.kickoff()
- 
+
             # Display the result
             st.success("Research article generated successfully!")
             st.markdown(result)
- 
+
         except requests.exceptions.RequestException as e:
             st.error(f"API Error: {str(e)}")
             if hasattr(e, 'response'):
@@ -158,6 +162,6 @@ if st.button("Generate Research Article"):
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             st.error(f"Traceback: {traceback.format_exc()}")
- 
+
 st.markdown("---")
 st.markdown("Tapestry Networks")
