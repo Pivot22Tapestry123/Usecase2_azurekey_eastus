@@ -42,6 +42,9 @@ azure_api_version = "2024-10-01-preview"
 openai.api_key = azure_api_key
 openai.api_base = azure_endpoint
 
+# Set the OPENAI_API_KEY environment variable for libraries expecting it this way
+os.environ["OPENAI_API_KEY"] = azure_api_key
+
 # Temperature slider
 temperature = st.slider("Set the temperature for the output (0 = deterministic, 1 = creative)", min_value=0.0, max_value=1.0, value=0.7)
 
@@ -107,8 +110,7 @@ if st.button("Generate Research Article"):
                 backstory=st.session_state['prompts']['planner']['backstory'],
                 allow_delegation=False,
                 verbose=True,
-                temperature=temperature,
-                openai_api_key=azure_api_key  # Pass the API key here
+                temperature=temperature
             )
 
             writer = Agent(
@@ -117,8 +119,7 @@ if st.button("Generate Research Article"):
                 backstory=st.session_state['prompts']['writer']['backstory'],
                 allow_delegation=False,
                 verbose=True,
-                temperature=temperature,
-                openai_api_key=azure_api_key  # Pass the API key here
+                temperature=temperature
             )
 
             editor = Agent(
@@ -127,8 +128,7 @@ if st.button("Generate Research Article"):
                 backstory=st.session_state['prompts']['editor']['backstory'],
                 allow_delegation=False,
                 verbose=True,
-                temperature=temperature,
-                openai_api_key=azure_api_key  # Pass the API key here
+                temperature=temperature
             )
 
             # Define tasks
