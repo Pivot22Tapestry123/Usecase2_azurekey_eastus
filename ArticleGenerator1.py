@@ -37,6 +37,9 @@ azure_endpoint = "https://rstapestryopenai2.openai.azure.com/"
 azure_deployment = "gpt-4"  # Deployment name as per your Azure configuration
 azure_api_version = "2024-10-01-preview"
 
+# Set the OPENAI_API_KEY environment variable
+os.environ["OPENAI_API_KEY"] = azure_api_key
+
 # Temperature slider
 temperature = st.slider("Set the temperature for the output (0 = deterministic, 1 = creative)", min_value=0.0, max_value=1.0, value=0.7)
 
@@ -102,7 +105,8 @@ if st.button("Generate Research Article"):
                 backstory=st.session_state['prompts']['planner']['backstory'],
                 allow_delegation=False,
                 verbose=True,
-                temperature=temperature
+                temperature=temperature,
+                openai_api_key=azure_api_key  # Pass the API key here
             )
 
             writer = Agent(
@@ -111,7 +115,8 @@ if st.button("Generate Research Article"):
                 backstory=st.session_state['prompts']['writer']['backstory'],
                 allow_delegation=False,
                 verbose=True,
-                temperature=temperature
+                temperature=temperature,
+                openai_api_key=azure_api_key  # Pass the API key here
             )
 
             editor = Agent(
@@ -120,7 +125,8 @@ if st.button("Generate Research Article"):
                 backstory=st.session_state['prompts']['editor']['backstory'],
                 allow_delegation=False,
                 verbose=True,
-                temperature=temperature
+                temperature=temperature,
+                openai_api_key=azure_api_key  # Pass the API key here
             )
 
             # Define tasks
