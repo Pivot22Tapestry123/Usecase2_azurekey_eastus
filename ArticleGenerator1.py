@@ -5,6 +5,7 @@ import os
 import json
 import warnings
 from crewai import Agent, Task, Crew, Process
+import openai
 
 # Suppress warnings
 warnings.filterwarnings('ignore')
@@ -37,8 +38,9 @@ azure_endpoint = "https://rstapestryopenai2.openai.azure.com/"
 azure_deployment = "gpt-4"  # Deployment name as per your Azure configuration
 azure_api_version = "2024-10-01-preview"
 
-# Set the OPENAI_API_KEY environment variable
-os.environ["OPENAI_API_KEY"] = azure_api_key
+# Set OpenAI API base and key for Azure
+openai.api_key = azure_api_key
+openai.api_base = azure_endpoint
 
 # Temperature slider
 temperature = st.slider("Set the temperature for the output (0 = deterministic, 1 = creative)", min_value=0.0, max_value=1.0, value=0.7)
