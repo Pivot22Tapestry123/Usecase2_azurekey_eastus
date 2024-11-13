@@ -34,7 +34,7 @@ st.write(uploaded_file)
 # API Key and endpoint inputs for Azure OpenAI
 azure_api_key = st.text_input("Enter your Azure OpenAI API Key", type="password")
 azure_endpoint = "https://rstapestryopenai.openai.azure.com/"
-azure_deployment = "rsTapestryOpenAI"
+azure_deployment = "rsTapestryOpenAI2"
 azure_api_version = "2024-10-01-preview"
  
 # Temperature slider
